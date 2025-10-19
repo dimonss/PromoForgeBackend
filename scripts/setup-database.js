@@ -28,10 +28,9 @@ async function setupDatabase() {
     console.log('🔒 Database connection closed.');
     
     console.log('\n🎉 Database setup completed successfully!');
-    console.log('\n📋 Default user credentials:');
-    console.log('   Username: admin');
-    console.log('   Password: admin123');
-    console.log('\n⚠️  Please change the default password after first login!');
+    console.log('\n📋 Next steps:');
+    console.log('   Run: npm run add-default-user');
+    console.log('   Or: npm run add-user -- --interactive');
     
   } catch (error) {
     console.error('❌ Database setup failed:', error);

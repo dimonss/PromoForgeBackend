@@ -19,9 +19,11 @@
     "setup-db": "node scripts/setup-database.js",
     "reset-db": "node scripts/reset-database.js",
     "check-db": "node scripts/check-database.js",
+    "add-user": "node scripts/add-user.js",
+    "add-default-user": "node scripts/add-default-user.js",
     "test-routes": "node scripts/test-routes.js",
     "test-swagger": "node scripts/test-swagger.js",
-    "postinstall": "node scripts/setup-database.js"
+    "postinstall": "node scripts/setup-database.js && node scripts/add-default-user.js"
   },
   "keywords": [
     "promo",

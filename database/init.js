@@ -72,36 +72,8 @@ async function initializeDatabase() {
         )
       `);
 
-      // Insert default user if none exists
-      database.get('SELECT COUNT(*) as count FROM users', async (err, row) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        if (row.count === 0) {
-          const defaultPassword = 'admin123';
-          const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-          
-          database.run(
-            'INSERT INTO users (username, password_hash, full_name) VALUES (?, ?, ?)',
-            ['admin', hashedPassword, 'Administrator'],
-            function(err) {
-              if (err) {
-                reject(err);
-                return;
-              }
-              console.log('Default user created:');
-              console.log('Username: admin');
-              console.log('Password: admin123');
-              console.log('⚠️  Please change the default password after first login!');
-              resolve();
-            }
-          );
-        } else {
-          resolve();
-        }
-      });
+      // Database initialization complete
+      resolve();
     });
   });
 }
