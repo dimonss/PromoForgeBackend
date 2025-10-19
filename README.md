@@ -46,6 +46,27 @@ A Node.js/Express.js backend API for managing promo codes with external API inte
    RATE_LIMIT_MAX_REQUESTS=100
    ```
 
+## Database Setup
+
+The application uses SQLite database which is automatically created on first run. You can also manually set up the database:
+
+### Automatic Setup (Recommended)
+```bash
+npm install  # This will automatically run database setup
+```
+
+### Manual Database Commands
+```bash
+# Setup database (create tables and default user)
+npm run setup-db
+
+# Check database status
+npm run check-db
+
+# Reset database (backup and recreate)
+npm run reset-db
+```
+
 ## Running the Application
 
 ### Development Mode
@@ -167,10 +188,42 @@ npm test
 
 ### Common Issues
 
-1. **Database connection errors**: Check database file permissions
-2. **External API errors**: Verify API URL and key configuration
-3. **Authentication issues**: Check JWT secret configuration
-4. **CORS errors**: Verify frontend URL in CORS configuration
+1. **Database connection errors**: 
+   - Run `npm run check-db` to verify database status
+   - Run `npm run setup-db` to recreate database
+   - Check database file permissions
+
+2. **Server won't start**:
+   - Ensure database is set up: `npm run setup-db`
+   - Check if port 3001 is available
+   - Verify environment variables in `.env` file
+
+3. **External API errors**: 
+   - Verify API URL and key configuration in `.env`
+   - Check network connectivity
+   - Review API request logs: `GET /api/promo/logs`
+
+4. **Authentication issues**: 
+   - Check JWT secret configuration
+   - Verify default credentials (admin/admin123)
+   - Reset database if needed: `npm run reset-db`
+
+5. **CORS errors**: 
+   - Verify frontend URL in CORS configuration
+   - Check if frontend is running on correct port
+
+### Database Commands
+
+```bash
+# Check database health
+npm run check-db
+
+# Recreate database with default user
+npm run setup-db
+
+# Reset database (backup existing data)
+npm run reset-db
+```
 
 ### Logs
 

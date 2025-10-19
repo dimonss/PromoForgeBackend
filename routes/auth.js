@@ -1,8 +1,8 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
-const { getDatabase } = require('../database/init');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { body, validationResult } from 'express-validator';
+import { getDatabase } from '../database/init.js';
 
 const router = express.Router();
 
@@ -161,4 +161,5 @@ router.post('/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logout successful' });
 });
 
-module.exports = { router, authenticateToken };
+export default router;
+export { authenticateToken };

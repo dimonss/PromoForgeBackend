@@ -1,8 +1,8 @@
-const express = require('express');
-const axios = require('axios');
-const { body, validationResult } = require('express-validator');
-const { getDatabase } = require('../database/init');
-const { authenticateToken } = require('./auth');
+import express from 'express';
+import axios from 'axios';
+import { body, validationResult } from 'express-validator';
+import { getDatabase } from '../database/init.js';
+import { authenticateToken } from './auth.js';
 
 const router = express.Router();
 
@@ -309,4 +309,4 @@ router.get('/logs', [
   }
 });
 
-module.exports = router;
+export default router;

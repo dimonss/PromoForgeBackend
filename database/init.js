@@ -1,6 +1,15 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const bcrypt = require('bcryptjs');
+import sqlite3 from 'sqlite3';
+import path from 'path';
+import fs from 'fs';
+import bcrypt from 'bcryptjs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES6 modules equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const { verbose } = sqlite3;
 
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../database.sqlite');
 
@@ -8,12 +17,19 @@ let db;
 
 function getDatabase() {
   if (!db) {
-    db = new sqlite3.Database(dbPath, (err) => {
+    // Ensure database directory exists
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+      console.log(`📁 Created database directory: ${dbDir}`);
+    }
+
+    db = new (verbose().Database)(dbPath, (err) => {
       if (err) {
         console.error('Error opening database:', err);
         throw err;
       }
-      console.log('Connected to SQLite database');
+      console.log(`🗄️  Connected to SQLite database: ${dbPath}`);
     });
   }
   return db;
@@ -108,7 +124,7 @@ function closeDatabase() {
   }
 }
 
-module.exports = {
+export {
   getDatabase,
   initializeDatabase,
   closeDatabase

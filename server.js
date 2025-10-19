@@ -1,12 +1,20 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const authRoutes = require('./routes/auth');
-const promoRoutes = require('./routes/promo');
-const { initializeDatabase } = require('./database/init');
+dotenv.config();
+
+// ES6 modules equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import authRoutes from './routes/auth.js';
+import promoRoutes from './routes/promo.js';
+import { initializeDatabase } from './database/init.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
