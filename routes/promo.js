@@ -6,6 +6,14 @@ import { authenticateToken } from './auth.js';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * components:
+ *   tags:
+ *     - name: Promo Codes
+ *       description: Управление промо-кодами
+ */
+
 // External API service for promo code operations
 class ExternalPromoService {
   constructor() {
@@ -68,7 +76,47 @@ function logApiRequest(type, promoCode, response, status) {
   );
 }
 
-// Generate promo code (via external API)
+/**
+ * @swagger
+ * /api/promo/generate:
+ *   post:
+ *     summary: Генерация промо-кода
+ *     description: Создание нового промо-кода через внешний API
+ *     tags: [Promo Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PromoGenerateRequest'
+ *     responses:
+ *       201:
+ *         description: Промо-код успешно создан
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PromoGenerateResponse'
+ *       400:
+ *         description: Ошибка валидации
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Требуется аутентификация
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Ошибка внешнего API или сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/generate', [
   authenticateToken,
   body('value').isNumeric().withMessage('Value must be a number'),
@@ -112,7 +160,43 @@ router.post('/generate', [
   }
 });
 
-// Check promo code status (via external API)
+/**
+ * @swagger
+ * /api/promo/status/{promoCode}:
+ *   get:
+ *     summary: Проверка статуса промо-кода
+ *     description: Получение информации о статусе промо-кода через внешний API
+ *     tags: [Promo Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: promoCode
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Промо-код для проверки
+ *         example: SUMMER2024-ABC123
+ *     responses:
+ *       200:
+ *         description: Статус промо-кода
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PromoStatus'
+ *       401:
+ *         description: Требуется аутентификация
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Ошибка внешнего API или сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/status/:promoCode', [
   authenticateToken
 ], async (req, res) => {
@@ -144,7 +228,53 @@ router.get('/status/:promoCode', [
   }
 });
 
-// Activate promo code (internal operation)
+/**
+ * @swagger
+ * /api/promo/activate:
+ *   post:
+ *     summary: Активация промо-кода
+ *     description: Активация промо-кода кассиром (внутренняя операция)
+ *     tags: [Promo Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PromoActivateRequest'
+ *     responses:
+ *       200:
+ *         description: Промо-код успешно активирован
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PromoActivateResponse'
+ *       400:
+ *         description: Ошибка валидации
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Требуется аутентификация
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Промо-код уже активирован
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/activate', [
   authenticateToken,
   body('promoCode').notEmpty().withMessage('Promo code is required'),
@@ -204,7 +334,56 @@ router.post('/activate', [
   }
 });
 
-// Get activation history
+/**
+ * @swagger
+ * /api/promo/activations:
+ *   get:
+ *     summary: История активаций промо-кодов
+ *     description: Получение истории активаций промо-кодов с пагинацией
+ *     tags: [Promo Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Номер страницы
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Количество записей на страницу
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Поиск по промо-коду, информации о клиенте или кассире
+ *     responses:
+ *       200:
+ *         description: История активаций
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ActivationHistory'
+ *       401:
+ *         description: Требуется аутентификация
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/activations', [
   authenticateToken
 ], (req, res) => {
@@ -261,7 +440,63 @@ router.get('/activations', [
   }
 });
 
-// Get API request logs
+/**
+ * @swagger
+ * /api/promo/logs:
+ *   get:
+ *     summary: Логи API запросов
+ *     description: Получение логов запросов к внешнему API с пагинацией
+ *     tags: [Promo Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Номер страницы
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Количество записей на страницу
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [generate, status]
+ *         description: Фильтр по типу запроса
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [success, failed]
+ *         description: Фильтр по статусу запроса
+ *     responses:
+ *       200:
+ *         description: Логи API запросов
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiLogs'
+ *       401:
+ *         description: Требуется аутентификация
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/logs', [
   authenticateToken
 ], (req, res) => {

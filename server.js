@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 import authRoutes from './routes/auth.js';
 import promoRoutes from './routes/promo.js';
 import { initializeDatabase } from './database/init.js';
+import { specs, swaggerUi } from './config/swagger.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -42,7 +43,29 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'PromoForge API Documentation',
+  customfavIcon: '/favicon.ico'
+}));
+
 // Health check endpoint
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Проверка состояния сервера
+ *     description: Возвращает статус работы сервера и версию API
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: Сервер работает нормально
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ */
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -79,6 +102,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 PromoForge Backend running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
       console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {

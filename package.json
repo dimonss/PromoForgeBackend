@@ -20,6 +20,7 @@
     "reset-db": "node scripts/reset-database.js",
     "check-db": "node scripts/check-database.js",
     "test-routes": "node scripts/test-routes.js",
+    "test-swagger": "node scripts/test-swagger.js",
     "postinstall": "node scripts/setup-database.js"
   },
   "keywords": [
@@ -40,7 +41,9 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",

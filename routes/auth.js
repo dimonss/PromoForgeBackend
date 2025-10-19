@@ -24,7 +24,53 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Login endpoint
+/**
+ * @swagger
+ * components:
+ *   tags:
+ *     - name: Authentication
+ *       description: Аутентификация и управление пользователями
+ */
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Вход в систему
+ *     description: Аутентификация пользователя и получение JWT токена
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Успешный вход
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Ошибка валидации
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Неверные учетные данные
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/login', [
   body('username').notEmpty().withMessage('Username is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
@@ -86,7 +132,39 @@ router.post('/login', [
   }
 });
 
-// Get current user info
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Получение информации о текущем пользователе
+ *     description: Возвращает информацию о аутентифицированном пользователе
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Информация о пользователе
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     username:
+ *                       type: string
+ *                     fullName:
+ *                       type: string
+ *       401:
+ *         description: Токен не предоставлен или недействителен
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/me', authenticateToken, (req, res) => {
   res.json({
     user: {
@@ -97,7 +175,51 @@ router.get('/me', authenticateToken, (req, res) => {
   });
 });
 
-// Change password endpoint
+/**
+ * @swagger
+ * /api/auth/change-password:
+ *   post:
+ *     summary: Смена пароля
+ *     description: Изменение пароля текущего пользователя
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChangePasswordRequest'
+ *     responses:
+ *       200:
+ *         description: Пароль успешно изменен
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password changed successfully
+ *       400:
+ *         description: Ошибка валидации
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Неверный текущий пароль или токен
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/change-password', [
   authenticateToken,
   body('currentPassword').notEmpty().withMessage('Current password is required'),
@@ -156,7 +278,33 @@ router.post('/change-password', [
   }
 });
 
-// Logout endpoint (client-side token removal)
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Выход из системы
+ *     description: Завершение сессии пользователя (удаление токена на клиенте)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Успешный выход
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Logout successful
+ *       401:
+ *         description: Токен не предоставлен или недействителен
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.post('/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logout successful' });
 });
