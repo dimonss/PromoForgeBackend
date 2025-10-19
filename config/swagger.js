@@ -34,6 +34,12 @@ const options = {
           scheme: 'bearer',
           bearerFormat: 'JWT',
           description: 'JWT токен для аутентификации'
+        },
+        apiKeyAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-api-key',
+          description: 'API ключ для доступа к внешним операциям'
         }
       },
       schemas: {

@@ -39,6 +39,7 @@ A Node.js/Express.js backend API for managing promo codes with external API inte
    PORT=3001
    NODE_ENV=development
    JWT_SECRET=your-super-secret-jwt-key-here
+   API_KEY=your-api-key-here
    EXTERNAL_API_BASE_URL=https://api.external-promo-service.com
    EXTERNAL_API_KEY=your-external-api-key-here
    DATABASE_PATH=./database.sqlite
@@ -120,13 +121,42 @@ The backend integrates with an external promo code service for:
 - Generating new promo codes
 - Checking promo code status
 
-Configure the external API settings in your `.env` file:
+Configure the API settings in your `.env` file:
+- `API_KEY` - API key for external API access (used for most promo operations)
 - `EXTERNAL_API_BASE_URL` - Base URL of the external API
-- `EXTERNAL_API_KEY` - API key for authentication
+- `EXTERNAL_API_KEY` - API key for external API authentication
+
+## Authentication
+
+The API uses two types of authentication:
+
+### API Key Authentication
+Most promo operations require an API key in the request header:
+```
+x-api-key: your-api-key-here
+```
+
+Routes using API key authentication:
+- `POST /api/promo/generate` - Generate promo codes
+- `POST /api/promo/activate` - Activate promo codes
+- `GET /api/promo/activations` - Get activation history
+- `GET /api/promo/logs` - Get API logs
+
+### JWT Token Authentication
+User-specific operations require JWT token authentication:
+```
+Authorization: Bearer your-jwt-token-here
+```
+
+Routes using JWT authentication:
+- `GET /api/promo/status/{promoCode}` - Check promo code status
+- `POST /api/promo/deactivate` - Deactivate promo codes
+- All `/api/auth/*` routes - Authentication operations
 
 ## Security Features
 
 - JWT token authentication
+- API key authentication
 - Password hashing with bcrypt
 - Rate limiting
 - CORS protection

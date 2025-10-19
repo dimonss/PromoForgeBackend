@@ -24,6 +24,21 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Middleware to verify API key
+const authenticateApiKey = (req, res, next) => {
+  const apiKey = req.headers['x-api-key'] || req.headers['api-key'];
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key required' });
+  }
+
+  if (apiKey !== process.env.API_KEY) {
+    return res.status(403).json({ error: 'Invalid API key' });
+  }
+
+  next();
+};
+
 /**
  * @swagger
  * components:
@@ -177,109 +192,6 @@ router.get('/me', authenticateToken, (req, res) => {
 
 /**
  * @swagger
- * /api/auth/change-password:
- *   post:
- *     summary: Смена пароля
- *     description: Изменение пароля текущего пользователя
- *     tags: [Authentication]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ChangePasswordRequest'
- *     responses:
- *       200:
- *         description: Пароль успешно изменен
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Password changed successfully
- *       400:
- *         description: Ошибка валидации
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ValidationError'
- *       401:
- *         description: Неверный текущий пароль или токен
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Внутренняя ошибка сервера
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.post('/change-password', [
-  authenticateToken,
-  body('currentPassword').notEmpty().withMessage('Current password is required'),
-  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { currentPassword, newPassword } = req.body;
-    const db = getDatabase();
-
-    // Get current user's password hash
-    db.get(
-      'SELECT password_hash FROM cashiers WHERE id = ?',
-      [req.user.id],
-      async (err, cashier) => {
-        if (err) {
-          console.error('Database error:', err);
-          return res.status(500).json({ error: 'Internal server error' });
-        }
-
-        if (!cashier) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Verify current password
-        const isValidPassword = await bcrypt.compare(currentPassword, cashier.password_hash);
-        if (!isValidPassword) {
-          return res.status(400).json({ error: 'Current password is incorrect' });
-        }
-
-        // Hash new password
-        const newPasswordHash = await bcrypt.hash(newPassword, 10);
-
-        // Update password
-        db.run(
-          'UPDATE cashiers SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [newPasswordHash, req.user.id],
-          function(err) {
-            if (err) {
-              console.error('Database error:', err);
-              return res.status(500).json({ error: 'Internal server error' });
-            }
-
-            res.json({ message: 'Password changed successfully' });
-          }
-        );
-      }
-    );
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-/**
- * @swagger
  * /api/auth/logout:
  *   post:
  *     summary: Выход из системы
@@ -310,4 +222,4 @@ router.post('/logout', authenticateToken, (req, res) => {
 });
 
 export default router;
-export { authenticateToken };
+export { authenticateToken, authenticateApiKey };

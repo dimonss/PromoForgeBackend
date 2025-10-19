@@ -58,11 +58,16 @@ async function initializeDatabase() {
         CREATE TABLE IF NOT EXISTS activated_promo_codes (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           promo_code TEXT UNIQUE NOT NULL,
-          cashier_id INTEGER NOT NULL,
+          cashier_id INTEGER,
           activated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           customer_info TEXT,
           notes TEXT,
-          FOREIGN KEY (cashier_id) REFERENCES cashiers (id)
+          is_deactivated BOOLEAN DEFAULT 0,
+          deactivated_at DATETIME,
+          deactivated_by INTEGER,
+          deactivation_reason TEXT,
+          FOREIGN KEY (cashier_id) REFERENCES cashiers (id),
+          FOREIGN KEY (deactivated_by) REFERENCES cashiers (id)
         )
       `);
 
@@ -77,6 +82,31 @@ async function initializeDatabase() {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `);
+
+      // Add deactivation columns to existing activated_promo_codes table if they don't exist
+      database.run(`
+        ALTER TABLE activated_promo_codes ADD COLUMN is_deactivated BOOLEAN DEFAULT 0
+      `, (err) => {
+        // Ignore error if column already exists
+      });
+      
+      database.run(`
+        ALTER TABLE activated_promo_codes ADD COLUMN deactivated_at DATETIME
+      `, (err) => {
+        // Ignore error if column already exists
+      });
+      
+      database.run(`
+        ALTER TABLE activated_promo_codes ADD COLUMN deactivated_by INTEGER
+      `, (err) => {
+        // Ignore error if column already exists
+      });
+      
+      database.run(`
+        ALTER TABLE activated_promo_codes ADD COLUMN deactivation_reason TEXT
+      `, (err) => {
+        // Ignore error if column already exists
+      });
 
       // Insert default cashier if none exists
       database.get('SELECT COUNT(*) as count FROM cashiers', async (err, row) => {

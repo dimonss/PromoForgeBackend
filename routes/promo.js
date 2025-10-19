@@ -2,7 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import { body, validationResult } from 'express-validator';
 import { getDatabase } from '../database/init.js';
-import { authenticateToken } from './auth.js';
+import { authenticateToken, authenticateApiKey } from './auth.js';
 
 const router = express.Router();
 
@@ -84,7 +84,7 @@ function logApiRequest(type, promoCode, response, status) {
  *     description: Создание нового промо-кода через внешний API
  *     tags: [Promo Codes]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -105,7 +105,7 @@ function logApiRequest(type, promoCode, response, status) {
  *             schema:
  *               $ref: '#/components/schemas/ValidationError'
  *       401:
- *         description: Требуется аутентификация
+ *         description: Требуется API ключ
  *         content:
  *           application/json:
  *             schema:
@@ -118,7 +118,7 @@ function logApiRequest(type, promoCode, response, status) {
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/generate', [
-  authenticateToken,
+  authenticateApiKey,
   body('value').isNumeric().withMessage('Value must be a number'),
   body('type').isIn(['percentage', 'fixed']).withMessage('Type must be percentage or fixed'),
   body('expiryDate').optional().isISO8601().withMessage('Expiry date must be valid ISO date')
@@ -136,7 +136,7 @@ router.post('/generate', [
       type,
       expiryDate: expiryDate || null,
       description: description || 'Generated via PromoForge',
-      generatedBy: req.user.username
+      generatedBy: 'API'
     };
 
     const result = await externalService.generatePromoCode(requestData);
@@ -233,10 +233,10 @@ router.get('/status/:promoCode', [
  * /api/promo/activate:
  *   post:
  *     summary: Активация промо-кода
- *     description: Активация промо-кода кассиром (внутренняя операция)
+ *     description: Активация промо-кода через API
  *     tags: [Promo Codes]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -257,7 +257,7 @@ router.get('/status/:promoCode', [
  *             schema:
  *               $ref: '#/components/schemas/ValidationError'
  *       401:
- *         description: Требуется аутентификация
+ *         description: Требуется API ключ
  *         content:
  *           application/json:
  *             schema:
@@ -276,7 +276,7 @@ router.get('/status/:promoCode', [
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/activate', [
-  authenticateToken,
+  authenticateApiKey,
   body('promoCode').notEmpty().withMessage('Promo code is required'),
   body('customerInfo').optional().isString().withMessage('Customer info must be a string'),
   body('notes').optional().isString().withMessage('Notes must be a string')
@@ -311,7 +311,7 @@ router.post('/activate', [
         // Insert new activation record
         db.run(
           'INSERT INTO activated_promo_codes (promo_code, cashier_id, customer_info, notes) VALUES (?, ?, ?, ?)',
-          [promoCode.trim(), req.user.id, customerInfo || null, notes || null],
+          [promoCode.trim(), null, customerInfo || null, notes || null],
           function(err) {
             if (err) {
               console.error('Database error:', err);
@@ -322,7 +322,7 @@ router.post('/activate', [
               message: 'Promo code activated successfully',
               activationId: this.lastID,
               activatedAt: new Date().toISOString(),
-              activatedBy: req.user.username
+              activatedBy: 'API'
             });
           }
         );
@@ -336,13 +336,136 @@ router.post('/activate', [
 
 /**
  * @swagger
+ * /api/promo/deactivate:
+ *   post:
+ *     summary: Деактивация промо-кода
+ *     description: Деактивация промо-кода кассиром (требует авторизации)
+ *     tags: [Promo Codes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - promoCode
+ *             properties:
+ *               promoCode:
+ *                 type: string
+ *                 description: Промо-код для деактивации
+ *                 example: SUMMER2024-ABC123
+ *               reason:
+ *                 type: string
+ *                 description: Причина деактивации
+ *                 example: Customer request
+ *     responses:
+ *       200:
+ *         description: Промо-код успешно деактивирован
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Promo code deactivated successfully
+ *                 deactivatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                 deactivatedBy:
+ *                   type: string
+ *       400:
+ *         description: Ошибка валидации
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ *       401:
+ *         description: Требуется аутентификация
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Промо-код не найден
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/deactivate', [
+  authenticateToken,
+  body('promoCode').notEmpty().withMessage('Promo code is required'),
+  body('reason').optional().isString().withMessage('Reason must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { promoCode, reason } = req.body;
+    const db = getDatabase();
+
+    // Check if promo code exists in activated codes
+    db.get(
+      'SELECT * FROM activated_promo_codes WHERE promo_code = ?',
+      [promoCode.trim()],
+      (err, activation) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (!activation) {
+          return res.status(404).json({ 
+            error: 'Promo code not found or not activated'
+          });
+        }
+
+        // Update activation record to mark as deactivated
+        db.run(
+          'UPDATE activated_promo_codes SET is_deactivated = 1, deactivated_at = CURRENT_TIMESTAMP, deactivated_by = ?, deactivation_reason = ? WHERE promo_code = ?',
+          [req.user.id, reason || null, promoCode.trim()],
+          function(err) {
+            if (err) {
+              console.error('Database error:', err);
+              return res.status(500).json({ error: 'Internal server error' });
+            }
+
+            res.json({
+              message: 'Promo code deactivated successfully',
+              deactivatedAt: new Date().toISOString(),
+              deactivatedBy: req.user.username,
+              reason: reason || null
+            });
+          }
+        );
+      }
+    );
+  } catch (error) {
+    console.error('Deactivate promo code error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * @swagger
  * /api/promo/activations:
  *   get:
  *     summary: История активаций промо-кодов
  *     description: Получение истории активаций промо-кодов с пагинацией
  *     tags: [Promo Codes]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -372,7 +495,7 @@ router.post('/activate', [
  *             schema:
  *               $ref: '#/components/schemas/ActivationHistory'
  *       401:
- *         description: Требуется аутентификация
+ *         description: Требуется API ключ
  *         content:
  *           application/json:
  *             schema:
@@ -385,7 +508,7 @@ router.post('/activate', [
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/activations', [
-  authenticateToken
+  authenticateApiKey
 ], (req, res) => {
   try {
     const db = getDatabase();
@@ -448,7 +571,7 @@ router.get('/activations', [
  *     description: Получение логов запросов к внешнему API с пагинацией
  *     tags: [Promo Codes]
  *     security:
- *       - bearerAuth: []
+ *       - apiKeyAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -485,7 +608,7 @@ router.get('/activations', [
  *             schema:
  *               $ref: '#/components/schemas/ApiLogs'
  *       401:
- *         description: Требуется аутентификация
+ *         description: Требуется API ключ
  *         content:
  *           application/json:
  *             schema:
@@ -498,7 +621,7 @@ router.get('/activations', [
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/logs', [
-  authenticateToken
+  authenticateApiKey
 ], (req, res) => {
   try {
     const db = getDatabase();
