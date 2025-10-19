@@ -45,32 +45,41 @@ function checkDatabase() {
           console.log(`   - ${table.name}`);
         });
 
-        // Check cashiers table
-        db.get("SELECT COUNT(*) as count FROM cashiers", (err, result) => {
+        // Check users table
+        db.get("SELECT COUNT(*) as count FROM users", (err, result) => {
           if (err) {
-            console.log('⚠️  Could not check cashiers table');
+            console.log('⚠️  Could not check users table');
           } else {
-            console.log(`\n👥 Cashiers: ${result.count}`);
+            console.log(`\n👥 Users: ${result.count}`);
           }
 
-          // Check activations table
-          db.get("SELECT COUNT(*) as count FROM activated_promo_codes", (err, result) => {
+          // Check promo codes table
+          db.get("SELECT COUNT(*) as count FROM promo_codes", (err, result) => {
             if (err) {
-              console.log('⚠️  Could not check activations table');
+              console.log('⚠️  Could not check promo codes table');
             } else {
-              console.log(`🎫 Activated promo codes: ${result.count}`);
+              console.log(`🎫 Promo codes: ${result.count}`);
             }
 
-            // Check logs table
-            db.get("SELECT COUNT(*) as count FROM promo_code_requests", (err, result) => {
+            // Check active promo codes
+            db.get("SELECT COUNT(*) as count FROM promo_codes WHERE is_active = 1", (err, result) => {
               if (err) {
-                console.log('⚠️  Could not check logs table');
+                console.log('⚠️  Could not check active promo codes');
               } else {
-                console.log(`📝 API request logs: ${result.count}`);
+                console.log(`✅ Active promo codes: ${result.count}`);
               }
 
-              console.log('\n✅ Database is healthy and ready to use!');
-              closeDatabase();
+              // Check deactivated promo codes
+              db.get("SELECT COUNT(*) as count FROM promo_codes WHERE is_active = 0", (err, result) => {
+                if (err) {
+                  console.log('⚠️  Could not check deactivated promo codes');
+                } else {
+                  console.log(`❌ Deactivated promo codes: ${result.count}`);
+                }
+
+                console.log('\n✅ Database is healthy and ready to use!');
+                closeDatabase();
+              });
             });
           });
         });

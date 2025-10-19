@@ -74,21 +74,20 @@ const options = {
             }
           }
         },
-        Cashier: {
+        User: {
           type: 'object',
           properties: {
             id: {
               type: 'integer',
-              description: 'Уникальный идентификатор кассира'
+              description: 'Уникальный идентификатор пользователя'
             },
             username: {
               type: 'string',
               description: 'Имя пользователя'
             },
-            role: {
+            fullName: {
               type: 'string',
-              enum: ['cashier', 'admin'],
-              description: 'Роль пользователя'
+              description: 'Полное имя пользователя'
             },
             created_at: {
               type: 'string',
@@ -126,239 +125,17 @@ const options = {
               description: 'JWT токен',
               example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
             },
-            role: {
-              type: 'string',
-              enum: ['cashier', 'admin'],
-              example: 'admin'
-            }
-          }
-        },
-        RegisterRequest: {
-          type: 'object',
-          required: ['username', 'password'],
-          properties: {
-            username: {
-              type: 'string',
-              minLength: 3,
-              description: 'Имя пользователя',
-              example: 'newuser'
-            },
-            password: {
-              type: 'string',
-              minLength: 6,
-              format: 'password',
-              description: 'Пароль',
-              example: 'password123'
-            },
-            role: {
-              type: 'string',
-              enum: ['cashier', 'admin'],
-              default: 'cashier',
-              description: 'Роль пользователя',
-              example: 'cashier'
-            }
-          }
-        },
-        ChangePasswordRequest: {
-          type: 'object',
-          required: ['oldPassword', 'newPassword'],
-          properties: {
-            oldPassword: {
-              type: 'string',
-              format: 'password',
-              description: 'Текущий пароль'
-            },
-            newPassword: {
-              type: 'string',
-              minLength: 6,
-              format: 'password',
-              description: 'Новый пароль'
-            }
-          }
-        },
-        PromoGenerateRequest: {
-          type: 'object',
-          required: ['campaignId', 'value', 'expiryDate'],
-          properties: {
-            campaignId: {
-              type: 'string',
-              description: 'ID кампании',
-              example: 'SUMMER2024'
-            },
-            value: {
-              type: 'number',
-              description: 'Значение промо-кода',
-              example: 10
-            },
-            expiryDate: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Дата истечения',
-              example: '2024-12-31T23:59:59.000Z'
-            }
-          }
-        },
-        PromoGenerateResponse: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Promo code generated successfully'
-            },
-            promoCode: {
-              type: 'string',
-              description: 'Сгенерированный промо-код',
-              example: 'SUMMER2024-ABC123'
-            }
-          }
-        },
-        PromoActivateRequest: {
-          type: 'object',
-          required: ['promoCode'],
-          properties: {
-            promoCode: {
-              type: 'string',
-              description: 'Промо-код для активации',
-              example: 'SUMMER2024-ABC123'
-            },
-            customerInfo: {
-              type: 'string',
-              description: 'Информация о клиенте',
-              example: 'Иван Иванов, +7-999-123-45-67'
-            },
-            notes: {
-              type: 'string',
-              description: 'Дополнительные заметки',
-              example: 'Активация в магазине №1'
-            }
-          }
-        },
-        PromoActivateResponse: {
-          type: 'object',
-          properties: {
-            message: {
-              type: 'string',
-              example: 'Promo code activated successfully'
-            },
-            activationId: {
-              type: 'integer',
-              description: 'ID активации',
-              example: 123
-            }
-          }
-        },
-        PromoStatus: {
-          type: 'object',
-          properties: {
-            code: {
-              type: 'string',
-              description: 'Промо-код'
-            },
-            status: {
-              type: 'string',
-              enum: ['active', 'expired', 'used', 'invalid'],
-              description: 'Статус промо-кода'
-            },
-            value: {
-              type: 'number',
-              description: 'Значение промо-кода'
-            },
-            expiryDate: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Дата истечения'
-            },
-            campaignId: {
-              type: 'string',
-              description: 'ID кампании'
-            }
-          }
-        },
-        ActivationHistory: {
-          type: 'object',
-          properties: {
-            total: {
-              type: 'integer',
-              description: 'Общее количество записей'
-            },
-            limit: {
-              type: 'integer',
-              description: 'Лимит записей на страницу'
-            },
-            offset: {
-              type: 'integer',
-              description: 'Смещение для пагинации'
-            },
-            history: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: {
-                    type: 'integer'
-                  },
-                  promo_code: {
-                    type: 'string'
-                  },
-                  customer_info: {
-                    type: 'string'
-                  },
-                  notes: {
-                    type: 'string'
-                  },
-                  activated_at: {
-                    type: 'string',
-                    format: 'date-time'
-                  },
-                  activated_by_username: {
-                    type: 'string'
-                  }
-                }
-              }
-            }
-          }
-        },
-        ApiLogs: {
-          type: 'object',
-          properties: {
-            total: {
-              type: 'integer',
-              description: 'Общее количество записей'
-            },
-            limit: {
-              type: 'integer',
-              description: 'Лимит записей на страницу'
-            },
-            offset: {
-              type: 'integer',
-              description: 'Смещение для пагинации'
-            },
-            logs: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  id: {
-                    type: 'integer'
-                  },
-                  type: {
-                    type: 'string',
-                    enum: ['generate', 'status']
-                  },
-                  promo_code: {
-                    type: 'string'
-                  },
-                  status: {
-                    type: 'string',
-                    enum: ['success', 'failed']
-                  },
-                  response: {
-                    type: 'object'
-                  },
-                  requested_at: {
-                    type: 'string',
-                    format: 'date-time'
-                  }
+            user: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'integer'
+                },
+                username: {
+                  type: 'string'
+                },
+                fullName: {
+                  type: 'string'
                 }
               }
             }

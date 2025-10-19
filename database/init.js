@@ -40,9 +40,14 @@ async function initializeDatabase() {
   
   return new Promise((resolve, reject) => {
     database.serialize(() => {
-      // Create cashiers table
+      // Drop existing tables to start fresh
+      database.run('DROP TABLE IF EXISTS promo_code_requests');
+      database.run('DROP TABLE IF EXISTS activated_promo_codes');
+      database.run('DROP TABLE IF EXISTS cashiers');
+
+      // Create users table (renamed from cashiers for clarity)
       database.run(`
-        CREATE TABLE IF NOT EXISTS cashiers (
+        CREATE TABLE IF NOT EXISTS users (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           username TEXT UNIQUE NOT NULL,
           password_hash TEXT NOT NULL,
@@ -53,63 +58,22 @@ async function initializeDatabase() {
         )
       `);
 
-      // Create activated_promo_codes table
+      // Create promo_codes table (simplified)
       database.run(`
-        CREATE TABLE IF NOT EXISTS activated_promo_codes (
+        CREATE TABLE IF NOT EXISTS promo_codes (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          promo_code TEXT UNIQUE NOT NULL,
-          cashier_id INTEGER,
-          activated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          customer_info TEXT,
-          notes TEXT,
-          is_deactivated BOOLEAN DEFAULT 0,
+          code TEXT UNIQUE NOT NULL,
+          is_active BOOLEAN DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           deactivated_at DATETIME,
           deactivated_by INTEGER,
           deactivation_reason TEXT,
-          FOREIGN KEY (cashier_id) REFERENCES cashiers (id),
-          FOREIGN KEY (deactivated_by) REFERENCES cashiers (id)
+          FOREIGN KEY (deactivated_by) REFERENCES users (id)
         )
       `);
 
-      // Create promo_code_requests table (for logging external API calls)
-      database.run(`
-        CREATE TABLE IF NOT EXISTS promo_code_requests (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          request_type TEXT NOT NULL,
-          promo_code TEXT,
-          external_response TEXT,
-          status TEXT NOT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      // Add deactivation columns to existing activated_promo_codes table if they don't exist
-      database.run(`
-        ALTER TABLE activated_promo_codes ADD COLUMN is_deactivated BOOLEAN DEFAULT 0
-      `, (err) => {
-        // Ignore error if column already exists
-      });
-      
-      database.run(`
-        ALTER TABLE activated_promo_codes ADD COLUMN deactivated_at DATETIME
-      `, (err) => {
-        // Ignore error if column already exists
-      });
-      
-      database.run(`
-        ALTER TABLE activated_promo_codes ADD COLUMN deactivated_by INTEGER
-      `, (err) => {
-        // Ignore error if column already exists
-      });
-      
-      database.run(`
-        ALTER TABLE activated_promo_codes ADD COLUMN deactivation_reason TEXT
-      `, (err) => {
-        // Ignore error if column already exists
-      });
-
-      // Insert default cashier if none exists
-      database.get('SELECT COUNT(*) as count FROM cashiers', async (err, row) => {
+      // Insert default user if none exists
+      database.get('SELECT COUNT(*) as count FROM users', async (err, row) => {
         if (err) {
           reject(err);
           return;
@@ -120,14 +84,14 @@ async function initializeDatabase() {
           const hashedPassword = await bcrypt.hash(defaultPassword, 10);
           
           database.run(
-            'INSERT INTO cashiers (username, password_hash, full_name) VALUES (?, ?, ?)',
+            'INSERT INTO users (username, password_hash, full_name) VALUES (?, ?, ?)',
             ['admin', hashedPassword, 'Administrator'],
             function(err) {
               if (err) {
                 reject(err);
                 return;
               }
-              console.log('Default cashier created:');
+              console.log('Default user created:');
               console.log('Username: admin');
               console.log('Password: admin123');
               console.log('⚠️  Please change the default password after first login!');

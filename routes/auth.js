@@ -99,22 +99,22 @@ router.post('/login', [
     const { username, password } = req.body;
     const db = getDatabase();
 
-    // Find cashier by username
+    // Find user by username
     db.get(
-      'SELECT * FROM cashiers WHERE username = ? AND is_active = 1',
+      'SELECT * FROM users WHERE username = ? AND is_active = 1',
       [username],
-      async (err, cashier) => {
+      async (err, user) => {
         if (err) {
           console.error('Database error:', err);
           return res.status(500).json({ error: 'Internal server error' });
         }
 
-        if (!cashier) {
+        if (!user) {
           return res.status(401).json({ error: 'Invalid credentials' });
         }
 
         // Verify password
-        const isValidPassword = await bcrypt.compare(password, cashier.password_hash);
+        const isValidPassword = await bcrypt.compare(password, user.password_hash);
         if (!isValidPassword) {
           return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -122,9 +122,9 @@ router.post('/login', [
         // Generate JWT token
         const token = jwt.sign(
           { 
-            id: cashier.id, 
-            username: cashier.username,
-            fullName: cashier.full_name
+            id: user.id, 
+            username: user.username,
+            fullName: user.full_name
           },
           process.env.JWT_SECRET,
           { expiresIn: '8h' }
@@ -134,9 +134,9 @@ router.post('/login', [
           message: 'Login successful',
           token,
           user: {
-            id: cashier.id,
-            username: cashier.username,
-            fullName: cashier.full_name
+            id: user.id,
+            username: user.username,
+            fullName: user.full_name
           }
         });
       }

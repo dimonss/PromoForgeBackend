@@ -19,22 +19,29 @@ https://api.promoforge.com/api-docs
 ### 🔐 **Authentication** - Аутентификация
 - `POST /api/auth/login` - Вход в систему
 - `GET /api/auth/me` - Информация о текущем пользователе
-- `POST /api/auth/change-password` - Смена пароля
 - `POST /api/auth/logout` - Выход из системы
 
 ### 🎫 **Promo Codes** - Промо-коды
-- `POST /api/promo/generate` - Генерация промо-кода
+- `POST /api/promo/generate` - Генерация промо-кода (UUID)
 - `GET /api/promo/status/{promoCode}` - Проверка статуса промо-кода
-- `POST /api/promo/activate` - Активация промо-кода
-- `GET /api/promo/activations` - История активаций
-- `GET /api/promo/logs` - Логи API запросов
+- `POST /api/promo/deactivate` - Деактивация промо-кода
 
 ### 🏥 **System** - Система
 - `GET /health` - Проверка состояния сервера
 
 ## 🔑 Аутентификация
 
-### Получение токена
+### Два типа аутентификации:
+
+#### 1. **API Key** (для генерации промокодов)
+- Заголовок: `x-api-key`
+- Используется для: `POST /api/promo/generate`
+
+#### 2. **JWT Token** (для пользователей)
+- Заголовок: `Authorization: Bearer <token>`
+- Используется для: проверки статуса и деактивации
+
+### Получение JWT токена
 1. Перейдите в раздел **Authentication**
 2. Выберите `POST /api/auth/login`
 3. Нажмите **"Try it out"**
@@ -56,34 +63,60 @@ https://api.promoforge.com/api-docs
 
 ## 🧪 Тестирование API
 
-### 1. **Генерация промо-кода**
-```json
+### 1. **Генерация промо-кода (UUID)**
+```bash
 POST /api/promo/generate
+Headers:
+  x-api-key: your-api-key-here
+```
+**Ответ:**
+```json
 {
-  "campaignId": "SUMMER2024",
-  "value": 10,
-  "expiryDate": "2024-12-31T23:59:59.000Z"
+  "message": "Promo code generated successfully",
+  "promoCode": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
 ### 2. **Проверка статуса**
+```bash
+GET /api/promo/status/550e8400-e29b-41d4-a716-446655440000
+Headers:
+  Authorization: Bearer YOUR_JWT_TOKEN
 ```
-GET /api/promo/status/SUMMER2024-ABC123
-```
-
-### 3. **Активация промо-кода**
+**Ответ:**
 ```json
-POST /api/promo/activate
 {
-  "promoCode": "SUMMER2024-ABC123",
-  "customerInfo": "Иван Иванов, +7-999-123-45-67",
-  "notes": "Активация в магазине №1"
+  "message": "Promo code status retrieved successfully",
+  "status": {
+    "code": "550e8400-e29b-41d4-a716-446655440000",
+    "isActive": true,
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "deactivatedAt": null,
+    "deactivatedBy": null,
+    "deactivationReason": null
+  }
 }
 ```
 
-### 4. **История активаций**
+### 3. **Деактивация промо-кода**
+```json
+POST /api/promo/deactivate
+Headers:
+  Authorization: Bearer YOUR_JWT_TOKEN
+Body:
+{
+  "promoCode": "550e8400-e29b-41d4-a716-446655440000",
+  "reason": "Customer requested refund"
+}
 ```
-GET /api/promo/activations?page=1&limit=10&search=SUMMER
+**Ответ:**
+```json
+{
+  "message": "Promo code deactivated successfully",
+  "deactivatedAt": "2024-01-15T10:35:00.000Z",
+  "deactivatedBy": "admin",
+  "reason": "Customer requested refund"
+}
 ```
 
 ## 📊 Схемы данных
@@ -101,25 +134,31 @@ GET /api/promo/activations?page=1&limit=10&search=SUMMER
 {
   "message": "Login successful",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "role": "admin"
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "fullName": "Administrator"
+  }
 }
 ```
 
-### **PromoGenerateRequest**
+### **PromoCodeStatus**
 ```json
 {
-  "campaignId": "string",
-  "value": 10,
-  "expiryDate": "2024-12-31T23:59:59.000Z"
+  "code": "string (UUID)",
+  "isActive": "boolean",
+  "createdAt": "string (ISO date)",
+  "deactivatedAt": "string (ISO date) | null",
+  "deactivatedBy": "string (username) | null",
+  "deactivationReason": "string | null"
 }
 ```
 
-### **PromoActivateRequest**
+### **DeactivateRequest**
 ```json
 {
-  "promoCode": "string",
-  "customerInfo": "string (optional)",
-  "notes": "string (optional)"
+  "promoCode": "string (UUID)",
+  "reason": "string (optional)"
 }
 ```
 
@@ -151,9 +190,9 @@ GET /api/promo/activations?page=1&limit=10&search=SUMMER
 | 201 | Ресурс создан |
 | 400 | Ошибка валидации |
 | 401 | Требуется аутентификация |
-| 403 | Доступ запрещен |
+| 403 | Доступ запрещен (неверный API ключ) |
 | 404 | Ресурс не найден |
-| 409 | Конфликт (например, промо-код уже активирован) |
+| 409 | Конфликт (промо-код уже деактивирован) |
 | 500 | Внутренняя ошибка сервера |
 
 ## 🛠️ Особенности
@@ -171,10 +210,10 @@ GET /api/promo/activations?page=1&limit=10&search=SUMMER
 - Подробные сообщения об ошибках
 - Поддержка русских сообщений
 
-### **Логирование**
-- Все запросы к внешнему API логируются
-- История активаций сохраняется
-- Детальная информация об ошибках
+### **Упрощенная логика**
+- Промокоды - это простые UUID
+- Нет сложной валидации или внешних API
+- Простая система статусов (активен/деактивирован)
 
 ## 📱 Примеры использования
 
@@ -194,17 +233,33 @@ const loginResponse = await fetch('http://localhost:3001/api/auth/login', {
 
 const { token } = await loginResponse.json();
 
-// Генерация промо-кода
+// Генерация промо-кода (UUID)
 const generateResponse = await fetch('http://localhost:3001/api/promo/generate', {
   method: 'POST',
   headers: {
-    'Content-Type': 'application/json',
+    'x-api-key': 'your-api-key-here'
+  }
+});
+
+const { promoCode } = await generateResponse.json();
+
+// Проверка статуса
+const statusResponse = await fetch(`http://localhost:3001/api/promo/status/${promoCode}`, {
+  headers: {
     'Authorization': `Bearer ${token}`
+  }
+});
+
+// Деактивация
+const deactivateResponse = await fetch('http://localhost:3001/api/promo/deactivate', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    campaignId: 'SUMMER2024',
-    value: 10,
-    expiryDate: '2024-12-31T23:59:59.000Z'
+    promoCode: promoCode,
+    reason: 'Test deactivation'
   })
 });
 ```
@@ -218,9 +273,17 @@ curl -X POST http://localhost:3001/api/auth/login \
 
 # Генерация промо-кода
 curl -X POST http://localhost:3001/api/promo/generate \
-  -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key-here"
+
+# Проверка статуса
+curl -X GET "http://localhost:3001/api/promo/status/550e8400-e29b-41d4-a716-446655440000" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Деактивация
+curl -X POST http://localhost:3001/api/promo/deactivate \
   -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"campaignId":"SUMMER2024","value":10,"expiryDate":"2024-12-31T23:59:59.000Z"}'
+  -H "Content-Type: application/json" \
+  -d '{"promoCode":"550e8400-e29b-41d4-a716-446655440000","reason":"Test"}'
 ```
 
 ### **Python (requests)**
@@ -236,14 +299,21 @@ response = requests.post('http://localhost:3001/api/auth/login', json=login_data
 token = response.json()['token']
 
 # Генерация промо-кода
+headers = {'x-api-key': 'your-api-key-here'}
+response = requests.post('http://localhost:3001/api/promo/generate', headers=headers)
+promo_code = response.json()['promoCode']
+
+# Проверка статуса
 headers = {'Authorization': f'Bearer {token}'}
-generate_data = {
-    "campaignId": "SUMMER2024",
-    "value": 10,
-    "expiryDate": "2024-12-31T23:59:59.000Z"
+response = requests.get(f'http://localhost:3001/api/promo/status/{promo_code}', headers=headers)
+
+# Деактивация
+deactivate_data = {
+    "promoCode": promo_code,
+    "reason": "Test deactivation"
 }
-response = requests.post('http://localhost:3001/api/promo/generate', 
-                        json=generate_data, headers=headers)
+response = requests.post('http://localhost:3001/api/promo/deactivate', 
+                        json=deactivate_data, headers=headers)
 ```
 
 ## 🔍 Отладка
@@ -262,16 +332,34 @@ curl http://localhost:3001/api-docs/
 Сервер выводит подробные логи в консоль:
 - Запросы к API
 - Ошибки валидации
-- Ошибки внешнего API
 - Ошибки базы данных
+- Информация о деактивации промокодов
+
+## 🗄️ База данных
+
+### **Таблицы:**
+- `users` - пользователи системы
+- `promo_codes` - промокоды (UUID)
+
+### **Скрипты управления БД:**
+```bash
+npm run setup-db    # Инициализация БД
+npm run reset-db    # Сброс БД (с бэкапом)
+npm run check-db    # Проверка состояния БД
+```
 
 ## 📚 Дополнительные ресурсы
 
 - [OpenAPI 3.0 Specification](https://swagger.io/specification/)
 - [Swagger UI Documentation](https://swagger.io/tools/swagger-ui/)
 - [JWT.io](https://jwt.io/) - для декодирования JWT токенов
-- [JSON Schema Validator](https://www.jsonschemavalidator.net/) - для проверки JSON
+- [UUID Generator](https://www.uuidgenerator.net/) - для генерации UUID
 
 ---
 
 **💡 Совет**: Используйте Swagger UI для интерактивного тестирования API. Это поможет быстро понять структуру данных и протестировать все endpoints!
+
+**🔑 Важно**: 
+- Для генерации промокодов используйте API ключ в заголовке `x-api-key`
+- Для проверки статуса и деактивации используйте JWT токен в заголовке `Authorization`
+- Промокоды генерируются как UUID и сохраняются в базе данных

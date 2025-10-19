@@ -28,7 +28,7 @@ async function setupDatabase() {
     console.log('🔒 Database connection closed.');
     
     console.log('\n🎉 Database setup completed successfully!');
-    console.log('\n📋 Default cashier credentials:');
+    console.log('\n📋 Default user credentials:');
     console.log('   Username: admin');
     console.log('   Password: admin123');
     console.log('\n⚠️  Please change the default password after first login!');
