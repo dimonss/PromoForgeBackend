@@ -1,10 +1,18 @@
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, validate as validateUUID } from 'uuid';
 import { body, validationResult } from 'express-validator';
 import { getDatabase } from '../database/init.js';
 import { authenticateToken, authenticateApiKey } from './auth.js';
 
 const router = express.Router();
+
+// Custom validator for UUID format
+const validatePromoCodeUUID = (value) => {
+  if (!validateUUID(value)) {
+    throw new Error('Promo code must be a valid UUID format');
+  }
+  return true;
+};
 
 /**
  * @swagger
@@ -92,7 +100,8 @@ router.post('/generate', authenticateApiKey, async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: Промо-код для проверки
+ *           format: uuid
+ *         description: Промо-код для проверки (UUID формат)
  *         example: "550e8400-e29b-41d4-a716-446655440000"
  *     responses:
  *       200:
@@ -150,6 +159,11 @@ router.get('/status/:promoCode', authenticateToken, (req, res) => {
       return res.status(400).json({ error: 'Promo code is required' });
     }
 
+    // Validate UUID format
+    if (!validateUUID(promoCode.trim())) {
+      return res.status(400).json({ error: 'Promo code must be a valid UUID format' });
+    }
+
     // Get promo code status from database
     db.get(
       `SELECT 
@@ -170,7 +184,7 @@ router.get('/status/:promoCode', authenticateToken, (req, res) => {
         }
 
         if (!row) {
-          return res.status(404).json({ error: 'Promo code not found' });
+          return res.status(404).json({ error: 'Промокод не найден' });
         }
 
         res.json({
@@ -212,12 +226,9 @@ router.get('/status/:promoCode', authenticateToken, (req, res) => {
  *             properties:
  *               promoCode:
  *                 type: string
- *                 description: Промо-код для деактивации
+ *                 format: uuid
+ *                 description: Промо-код для деактивации (UUID формат)
  *                 example: "550e8400-e29b-41d4-a716-446655440000"
- *               reason:
- *                 type: string
- *                 description: Причина деактивации (опционально)
- *                 example: "Customer requested refund"
  *     responses:
  *       200:
  *         description: Промо-код успешно деактивирован
@@ -235,9 +246,6 @@ router.get('/status/:promoCode', authenticateToken, (req, res) => {
  *                 deactivatedBy:
  *                   type: string
  *                   example: "admin"
- *                 reason:
- *                   type: string
- *                   example: "Customer requested refund"
  *       400:
  *         description: Ошибка валидации
  *         content:
@@ -271,8 +279,10 @@ router.get('/status/:promoCode', authenticateToken, (req, res) => {
  */
 router.post('/deactivate', [
   authenticateToken,
-  body('promoCode').notEmpty().withMessage('Promo code is required'),
-  body('reason').optional()
+  body('promoCode')
+    .notEmpty()
+    .withMessage('Promo code is required')
+    .custom(validatePromoCodeUUID)
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -280,8 +290,7 @@ router.post('/deactivate', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { promoCode, reason } = req.body;
-    const deactivationReason = reason || 'Deactivated by user';
+    const { promoCode } = req.body;
     const db = getDatabase();
 
     // Check if promo code exists and is active
@@ -296,7 +305,7 @@ router.post('/deactivate', [
 
         if (!promoCodeRow) {
           return res.status(404).json({ 
-            error: 'Promo code not found'
+            error: 'Промокод не найден'
           });
         }
 
@@ -310,8 +319,8 @@ router.post('/deactivate', [
 
         // Update promo code to mark as deactivated
         db.run(
-          'UPDATE promo_codes SET is_active = 0, deactivated_at = CURRENT_TIMESTAMP, deactivated_by = ?, deactivation_reason = ? WHERE code = ?',
-          [req.user.id, deactivationReason, promoCode.trim()],
+          'UPDATE promo_codes SET is_active = 0, deactivated_at = CURRENT_TIMESTAMP, deactivated_by = ? WHERE code = ?',
+          [req.user.id, promoCode.trim()],
           function(err) {
             if (err) {
               console.error('Database error:', err);
@@ -321,8 +330,7 @@ router.post('/deactivate', [
             res.json({
               message: 'Promo code deactivated successfully',
               deactivatedAt: new Date().toISOString(),
-              deactivatedBy: req.user.username,
-              reason: deactivationReason
+              deactivatedBy: req.user.username
             });
           }
         );
