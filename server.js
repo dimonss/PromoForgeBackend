@@ -37,7 +37,7 @@ const limiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
-app.use('/api/', limiter);
+app.use('/', limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -75,8 +75,8 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/promo', promoRoutes);
+app.use('/auth', authRoutes);
+app.use('/promo', promoRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
