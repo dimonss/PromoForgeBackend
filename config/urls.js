@@ -30,7 +30,7 @@ export function getApiUrl(endpoint = '') {
  */
 export function getSwaggerUrl() {
   const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/api-docs`;
+  return `${baseUrl}/api/api-docs/#/`;
 }
 
 /**
