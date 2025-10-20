@@ -52,7 +52,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
 // Health check endpoint
 /**
  * @swagger
- * /health:
+ * /api/health:
  *   get:
  *     summary: Проверка состояния сервера
  *     description: Возвращает статус работы сервера и версию API
