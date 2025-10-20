@@ -20,8 +20,8 @@ const options = {
     servers: [
       {
         url: process.env.NODE_ENV === 'production' 
-          ? 'https://api.promoforge.com' 
-          : 'http://localhost:3001',
+          ? (process.env.API_BASE_URL_PROD || 'http://localhost:3001')
+          : ('http://localhost:3001'),
         description: process.env.NODE_ENV === 'production' 
           ? 'Production server' 
           : 'Development server'
