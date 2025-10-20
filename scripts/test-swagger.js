@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
+import { getApiBaseUrl, getApiUrl } from '../config/urls.js';
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = getApiBaseUrl();
 
 // Test data
 const testUser = {
@@ -21,14 +22,14 @@ async function testSwaggerEndpoints() {
   try {
     // 1. Test Health Check
     console.log('1️⃣ Testing Health Check...');
-    const healthResponse = await fetch(`${BASE_URL}/health`);
+    const healthResponse = await fetch(getApiUrl('/health'));
     const healthData = await healthResponse.json();
     console.log('✅ Health Check:', healthData);
     console.log('');
 
     // 2. Test Login
     console.log('2️⃣ Testing Login...');
-    const loginResponse = await fetch(`${BASE_URL}/api/auth/login`, {
+    const loginResponse = await fetch(getApiUrl('/auth/login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -52,7 +53,7 @@ async function testSwaggerEndpoints() {
 
     // 3. Test Get User Info
     console.log('3️⃣ Testing Get User Info...');
-    const userResponse = await fetch(`${BASE_URL}/api/auth/me`, {
+    const userResponse = await fetch(getApiUrl('/auth/me'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -68,7 +69,7 @@ async function testSwaggerEndpoints() {
 
     // 4. Test Generate Promo Code
     console.log('4️⃣ Testing Generate Promo Code...');
-    const generateResponse = await fetch(`${BASE_URL}/api/promo/generate`, {
+    const generateResponse = await fetch(getApiUrl('/promo/generate'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ async function testSwaggerEndpoints() {
 
     // 5. Test Get Activations
     console.log('5️⃣ Testing Get Activations...');
-    const activationsResponse = await fetch(`${BASE_URL}/api/promo/activations?page=1&limit=5`, {
+    const activationsResponse = await fetch(getApiUrl('/promo/activations?page=1&limit=5'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -107,7 +108,7 @@ async function testSwaggerEndpoints() {
 
     // 6. Test Get Logs
     console.log('6️⃣ Testing Get Logs...');
-    const logsResponse = await fetch(`${BASE_URL}/api/promo/logs?page=1&limit=5`, {
+    const logsResponse = await fetch(getApiUrl('/promo/logs?page=1&limit=5'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -126,7 +127,7 @@ async function testSwaggerEndpoints() {
 
     // 7. Test Logout
     console.log('7️⃣ Testing Logout...');
-    const logoutResponse = await fetch(`${BASE_URL}/api/auth/logout`, {
+    const logoutResponse = await fetch(getApiUrl('/auth/logout'), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -143,7 +144,7 @@ async function testSwaggerEndpoints() {
 
     console.log('🎉 All API tests completed successfully!');
     console.log('\n📚 Swagger documentation is available at:');
-    console.log(`   ${BASE_URL}/api-docs`);
+    console.log(`   ${getApiUrl('/api-docs')}`);
 
   } catch (error) {
     console.error('❌ Test failed:', error.message);

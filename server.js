@@ -16,6 +16,7 @@ import authRoutes from './routes/auth.js';
 import promoRoutes from './routes/promo.js';
 import { initializeDatabase } from './database/init.js';
 import { specs, swaggerUi } from './config/swagger.js';
+import { getCorsOrigins, getSwaggerUrl, getHealthUrl } from './config/urls.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,9 +26,7 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.DOMAIN]
-    : ['http://localhost:3000', 'http://localhost:3001'],
+  origin: getCorsOrigins(),
   credentials: true
 }));
 
@@ -101,8 +100,8 @@ async function startServer() {
     
     app.listen(PORT, () => {
       console.log(`🚀 PromoForge Backend running on port ${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/health`);
-      console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+      console.log(`📊 Health check: ${getHealthUrl()}`);
+      console.log(`📚 API Documentation: ${getSwaggerUrl()}`);
       console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {

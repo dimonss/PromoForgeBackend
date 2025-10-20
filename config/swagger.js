@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import { getApiBaseUrl } from './urls.js';
 
 const options = {
   definition: {
@@ -19,9 +20,7 @@ const options = {
     },
     servers: [
       {
-        url: process.env.NODE_ENV === 'production' 
-          ? (process.env.API_BASE_URL_PROD || 'http://localhost:3001')
-          : ('http://localhost:3001'),
+        url: getApiBaseUrl(),
         description: process.env.NODE_ENV === 'production' 
           ? 'Production server' 
           : 'Development server'

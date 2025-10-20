@@ -1,11 +1,11 @@
 // Basic API tests without complex setup
 import fetch from 'node-fetch';
+import { BASE_URL, testUtils } from './test-config.js';
 
 // Mock fetch for Node.js environment
 global.fetch = fetch;
 
 describe('Basic API Tests', () => {
-  const BASE_URL = 'http://localhost:3001';
   let serverProcess;
 
   beforeAll(async () => {
@@ -34,7 +34,7 @@ describe('Basic API Tests', () => {
   });
 
   test('should respond to health check', async () => {
-    const response = await fetch(`${BASE_URL}/health`);
+    const response = await fetch(testUtils.getApiUrl('/health'));
     expect(response.status).toBe(200);
     
     const data = await response.json();
@@ -43,7 +43,7 @@ describe('Basic API Tests', () => {
   });
 
   test('should handle 404 for non-existent routes', async () => {
-    const response = await fetch(`${BASE_URL}/non-existent`);
+    const response = await fetch(testUtils.getApiUrl('/non-existent'));
     expect(response.status).toBe(404);
     
     const data = await response.json();
@@ -51,9 +51,9 @@ describe('Basic API Tests', () => {
   });
 
   test('should reject login without credentials', async () => {
-    const response = await fetch(`${BASE_URL}/api/auth/login`, {
+    const response = await fetch(testUtils.getApiUrl('/auth/login'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: testUtils.getBaseHeaders(),
       body: JSON.stringify({})
     });
     
@@ -61,9 +61,9 @@ describe('Basic API Tests', () => {
   });
 
   test('should reject promo generation without auth', async () => {
-    const response = await fetch(`${BASE_URL}/api/promo/generate`, {
+    const response = await fetch(testUtils.getApiUrl('/promo/generate'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: testUtils.getBaseHeaders(),
       body: JSON.stringify({ value: 10, type: 'percentage' })
     });
     
