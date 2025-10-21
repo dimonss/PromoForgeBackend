@@ -10,7 +10,8 @@ export function getApiBaseUrl() {
   if (process.env.NODE_ENV === 'production') {
     return process.env.API_BASE_URL_PROD || "http://localhost:3001";
   }
-  return 'http://localhost:3001';
+  const port = process.env.PORT || 3001;
+  return `http://localhost:${port}`;
 }
 
 /**
@@ -30,7 +31,7 @@ export function getApiUrl(endpoint = '') {
  */
 export function getSwaggerUrl() {
   const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/api-docs/#/`;
+  return `${baseUrl}/${process.env.NODE_ENV === "production" ? "api/" : ""}api-docs/#/`;
 }
 
 /**
@@ -39,7 +40,7 @@ export function getSwaggerUrl() {
  */
 export function getHealthUrl() {
   const baseUrl = getApiBaseUrl();
-  return `${baseUrl}/api/health`;
+  return `${baseUrl}/${process.env.NODE_ENV === "production" ? "api/" : ""}health`;
 }
 
 /**
