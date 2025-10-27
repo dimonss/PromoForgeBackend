@@ -36,7 +36,7 @@ const limiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.'
 });
-app.use('/', limiter);
+app.use(process.env.NODE_ENV === 'production' ? '/' : '/api/', limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -74,8 +74,8 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/auth', authRoutes);
-app.use('/promo', promoRoutes);
+app.use(process.env.NODE_ENV === 'production' ? '/auth' : '/api/auth', authRoutes);
+app.use(process.env.NODE_ENV === 'production' ? '/promo' : '/api/promo', promoRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
