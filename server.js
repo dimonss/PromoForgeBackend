@@ -43,7 +43,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'PromoForge API Documentation',
   customfavIcon: '/favicon.ico'
