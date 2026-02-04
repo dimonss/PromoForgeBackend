@@ -24,7 +24,15 @@ const options = {
         description: process.env.NODE_ENV === 'production' 
           ? 'Production server' 
           : 'Development server'
-      }
+      },
+      {
+        url: "https://chalysh.pro/promo_forge",
+        description: 'Production server'
+      },
+      {
+        url: "http://localhost:4000/promo_forge",
+        description: 'Local server'
+      },
     ],
     components: {
       securitySchemes: {
