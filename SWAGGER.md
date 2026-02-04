@@ -11,7 +11,7 @@ http://localhost:3001/api-docs
 
 ### Продакшн
 ```
-https://api.promoforge.com/api-docs
+https://chalysh.pro/promo_forge/api/docs/
 ```
 
 ## 📋 Структура API
