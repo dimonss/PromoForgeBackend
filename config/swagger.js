@@ -21,9 +21,9 @@ const options = {
     servers: [
       {
         url: getApiBaseUrl(),
-        description: process.env.NODE_ENV === 'production' 
+        description: `${process.env.NODE_ENV === 'production' 
           ? 'Production server' 
-          : 'Development server'
+          : 'Development server'} (auto detect)`
       },
       {
         url: "https://chalysh.pro/promo_forge",
